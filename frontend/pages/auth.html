@@ -249,8 +249,10 @@ body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse
 </div></div>
 
 <script>
+
+   window.API_BASE = "https://securecheck-orsb.onrender.com/";
 /* ── Config ────────────────────────────────────────── */
-const API = 'http://localhost:5000/api';
+const API = window.API_BASE || 'http://localhost:5000/api';
 
 /* ── If already logged in, skip to dashboard ────── */
 if (localStorage.getItem('ts_token')) {
