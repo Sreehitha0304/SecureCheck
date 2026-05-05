@@ -14,15 +14,11 @@ app.use(helmet({
 }));
 
 /* ───────────────── CORS ───────────────── */
-app.use(cors({
-  origin: [
-    "https://secure-check-six.vercel.app",
-    /\.vercel\.app$/   // allows preview deployments
-  ],
-  credentials: true,
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization']
-}));
+fetch(`${API}/auth/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ email, password })
+});
 /* ───────────────── BODY PARSING ───────────────── */
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
