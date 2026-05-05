@@ -744,7 +744,17 @@ def api_analyze_network():
     except Exception as e:
         logger.error(f'Network analysis error: {traceback.format_exc()}')
         return jsonify({'error': str(e)}), 500
-
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({
+        "status": "SecureCheck ML Service Running",
+        "endpoints": [
+            "/health",
+            "/predict/file",
+            "/predict/url",
+            "/analyze/network"
+        ]
+    })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
