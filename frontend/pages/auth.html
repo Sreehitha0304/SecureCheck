@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SecureCheck — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#04080f;--bg2:#070d16;--bg3:#0b1420;
+  --surface:#111d2e;--surface2:#162233;
+  --b1:#1a2d42;--b2:#203650;
+  --cyan:#00c8ff;--cyan2:#0090ff;
+  --cdim:rgba(0,200,255,.12);
+  --red:#ff3d5a;--rdim:rgba(255,61,90,.14);
+  --green:#00e676;--gdim:rgba(0,230,118,.12);
+  --amber:#ffab00;
+  --text:#ddeeff;--t2:#6d8ba8;--t3:#334d63;
+  --head:'Syne',sans-serif;--body:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:15px;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,200,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,200,255,.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(0,144,255,.08),transparent);pointer-events:none}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+/* blobs */
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.06;pointer-events:none}
+.b1{width:500px;height:500px;background:var(--cyan);top:-120px;left:-120px;animation:fl 10s ease-in-out infinite}
+.b2{width:420px;height:420px;background:var(--cyan2);bottom:-100px;right:-80px;animation:fl 13s ease-in-out infinite reverse}
+@keyframes fl{0%,100%{transform:translate(0,0)}50%{transform:translate(28px,18px)}}
+
+/* layout */
+.page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;position:relative;z-index:1}
+.wrap{width:100%;max-width:460px}
+
+/* logo */
+.logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px;text-decoration:none}
+.hex{width:46px;height:46px;background:linear-gradient(135deg,var(--cyan2),var(--cyan));clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#000;box-shadow:0 0 32px rgba(0,200,255,.25)}
+.lname{font-family:var(--head);font-size:22px;font-weight:800;color:var(--text)}
+.lname span{color:var(--cyan)}
+
+/* card */
+.card{background:var(--surface);border:1px solid var(--b2);border-radius:24px;padding:40px;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(0,200,255,.04)}
+
+/* tabs */
+.tabs{display:flex;background:var(--bg3);border-radius:10px;padding:4px;margin-bottom:28px}
+.tab{flex:1;padding:9px 16px;background:none;border:none;border-radius:7px;font-family:var(--body);font-size:14px;color:var(--t2);cursor:pointer;transition:all .2s}
+.tab.on{background:var(--surface2);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.3)}
+
+/* form */
+.ftitle{font-family:var(--head);font-size:24px;font-weight:800;margin-bottom:4px}
+.fsub{font-size:13.5px;color:var(--t2);margin-bottom:28px}
+.fg{margin-bottom:18px}
+.fl{display:block;font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--t2);margin-bottom:7px}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--b2);border-radius:10px;padding:12px 16px;color:var(--text);font-family:var(--body);font-size:14px;outline:none;transition:border .2s,box-shadow .2s}
+.fi:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,200,255,.1)}
+.fi::placeholder{color:var(--t3)}
+.fi.shake{animation:shk .4s ease}
+@keyframes shk{0%,100%{transform:translateX(0)}25%,75%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+.iw{position:relative}.iw .fi{padding-right:46px}
+.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--t3);cursor:pointer;font-size:17px;padding:4px;line-height:1}
+
+/* pw strength */
+.pws{display:none;align-items:center;gap:4px;margin-top:7px}
+.pwb{flex:1;height:3px;border-radius:2px;background:var(--b1);transition:background .3s}
+.pwb.w{background:var(--red)}.pwb.f{background:var(--amber)}.pwb.s{background:var(--green)}
+.pwl{font-family:var(--mono);font-size:10px;color:var(--t3);margin-left:4px;min-width:52px}
+
+/* alert */
+.alert{border-radius:10px;padding:13px 16px;font-size:13.5px;margin-bottom:18px;display:none;align-items:flex-start;gap:10px;line-height:1.5}
+.alert.show{display:flex}
+.alert.err{background:var(--rdim);border:1px solid rgba(255,61,90,.35);color:var(--red)}
+.alert.ok{background:var(--gdim);border:1px solid rgba(0,230,118,.35);color:var(--green)}
+.alert.warn{background:rgba(255,171,0,.1);border:1px solid rgba(255,171,0,.3);color:var(--amber)}
+.alert a{color:inherit;cursor:pointer;text-decoration:underline;font-weight:700}
+
+/* button */
+.fbtn{width:100%;padding:14px;background:linear-gradient(135deg,var(--cyan2),var(--cyan));color:#000;border:none;border-radius:10px;font-family:var(--head);font-size:15px;font-weight:800;letter-spacing:.5px;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.fbtn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 28px rgba(0,200,255,.3)}
+.fbtn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.spin{width:17px;height:17px;border:2.5px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* switch */
+.sw{text-align:center;font-size:13.5px;color:var(--t2);margin-top:20px}
+.sw a{color:var(--cyan);cursor:pointer;font-weight:600}
+.sw a:hover{text-decoration:underline}
+
+/* footer */
+.fnote{text-align:center;margin-top:24px;font-size:12px;color:var(--t3);line-height:1.7}
+
+/* success overlay */
+.sov{position:fixed;inset:0;z-index:9999;background:rgba(4,8,15,.92);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+.sov.show{display:flex}
+.sov-icon{font-size:60px;animation:pop .4s cubic-bezier(.17,.67,.55,1.4)}
+@keyframes pop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.sov-title{font-family:var(--head);font-size:26px;font-weight:800;color:var(--green)}
+.sov-sub{font-size:15px;color:var(--t2)}
+.sov-bar{width:260px;height:3px;background:var(--b1);border-radius:2px;overflow:hidden;margin-top:8px}
+.sov-fill{height:100%;background:linear-gradient(90deg,var(--cyan2),var(--cyan));border-radius:2px;width:0%;transition:width .9s ease}
+</style>
+</head>
+<body>
+<div class="blob b1"></div>
+<div class="blob b2"></div>
+
+<!-- Success overlay before redirect -->
+<div class="sov" id="sov">
+  <div class="sov-icon">✅</div>
+  <div class="sov-title" id="sov-t">Login Successful!</div>
+  <div class="sov-sub" id="sov-s">Taking you to your dashboard...</div>
+  <div class="sov-bar"><div class="sov-fill" id="sov-fill"></div></div>
+</div>
+
+<div class="page"><div class="wrap">
+  <a class="logo" href="#">
+    <div class="hex">⬡</div>
+    <span class="lname">SecureCheck<span> AI</span></span>
+  </a>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab on" id="t-li" onclick="setTab('login')">Sign In</button>
+      <button class="tab"    id="t-su" onclick="setTab('signup')">Create Account</button>
+      <button class="tab"    id="t-fp" onclick="setTab('forgot')" style="font-size:12px">Forgot Password</button>
+    </div>
+
+    <!-- shared alert -->
+    <div class="alert" id="alert">
+      <span id="a-icon"></span>
+      <span id="a-msg"></span>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="f-login">
+      <div class="ftitle">Welcome back</div>
+      <div class="fsub">Sign in to your SecureCheck AI account</div>
+      <form onsubmit="doLogin(event)" novalidate>
+        <div class="fg">
+          <label class="fl">Email address</label>
+          <input class="fi" type="email" id="l-email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="iw">
+            <input class="fi" type="password" id="l-pw" placeholder="Your password" autocomplete="current-password"/>
+            <button type="button" class="eye" onclick="togglePw('l-pw',this)">👁</button>
+          </div>
+        </div>
+        <button class="fbtn" id="btn-l" type="submit"><span id="btn-l-t">Sign In →</span></button>
+      </form>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:12px">
+        <a onclick="setTab('forgot')" style="font-size:12px;color:var(--t2);cursor:pointer">Forgot password?</a>
+      </div>
+      <div class="sw">No account? <a onclick="setTab('signup')">Create one free</a></div>
+    </div>
+
+    <!-- SIGNUP -->
+    <div id="f-signup" style="display:none">
+      <div class="ftitle">Create account</div>
+      <div class="fsub">Join free — your scans stay private to you</div>
+      <form onsubmit="doSignup(event)" novalidate>
+        <div class="fg">
+          <label class="fl">Full Name</label>
+          <input class="fi" type="text" id="s-name" placeholder="Sreehitha Reddy" autocomplete="name"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Email address</label>
+          <input class="fi" type="email" id="s-email" placeholder="you@example.com" autocomplete="email"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Password</label>
+          <div class="iw">
+            <input class="fi" type="password" id="s-pw" placeholder="Min 8 characters" autocomplete="new-password" oninput="pwStr(this.value)"/>
+            <button type="button" class="eye" onclick="togglePw('s-pw',this)">👁</button>
+          </div>
+          <div class="pws" id="pws">
+            <div class="pwb" id="pb1"></div><div class="pwb" id="pb2"></div>
+            <div class="pwb" id="pb3"></div><div class="pwb" id="pb4"></div>
+            <span class="pwl" id="pwl"></span>
+          </div>
+        </div>
+        <div class="fg">
+          <label class="fl">Confirm Password</label>
+          <div class="iw">
+            <input class="fi" type="password" id="s-pw2" placeholder="Repeat your password" autocomplete="new-password"/>
+            <button type="button" class="eye" onclick="togglePw('s-pw2',this)">👁</button>
+          </div>
+        </div>
+        <button class="fbtn" id="btn-s" type="submit"><span id="btn-s-t">Create Account →</span></button>
+      </form>
+      <div class="sw">Already have an account? <a onclick="setTab('login')">Sign in here</a></div>
+    </div>
+
+    <!-- ═══ FORGOT PASSWORD ═══ -->
+    <div id="f-forgot" style="display:none">
+      <!-- Step 1: Enter email -->
+      <div id="fp-step1">
+        <div class="ftitle">Forgot Password</div>
+        <div class="fsub">Enter your email — we'll send you a 6-digit reset code</div>
+        <form onsubmit="doSendOtp(event)" novalidate>
+          <div class="fg">
+            <label class="fl">Email address</label>
+            <input class="fi" type="email" id="fp-email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+          <button class="fbtn" id="btn-fp1" type="submit"><span id="btn-fp1-t">Send Reset Code →</span></button>
+        </form>
+        <div class="sw"><a onclick="setTab('login')">← Back to Sign In</a></div>
+      </div>
+
+      <!-- Step 2: Enter OTP + new password -->
+      <div id="fp-step2" style="display:none">
+        <div class="ftitle">Enter Reset Code</div>
+        <div class="fsub" id="fp-step2-sub">Check your email (or backend terminal in dev) for your 6-digit code</div>
+        <form onsubmit="doResetPassword(event)" novalidate>
+          <div class="fg">
+            <label class="fl">6-Digit OTP Code</label>
+            <input class="fi" type="text" id="fp-otp" placeholder="123456" maxlength="6" style="letter-spacing:8px;font-size:20px;text-align:center" autocomplete="one-time-code"/>
+          </div>
+          <div class="fg">
+            <label class="fl">New Password</label>
+            <div class="iw">
+              <input class="fi" type="password" id="fp-newpw" placeholder="Min 8 characters" autocomplete="new-password" oninput="pwStr(this.value)"/>
+              <button type="button" class="eye" onclick="togglePw('fp-newpw',this)">👁</button>
+            </div>
+            <div class="pws" id="pws">
+              <div class="pwb" id="pb1"></div><div class="pwb" id="pb2"></div>
+              <div class="pwb" id="pb3"></div><div class="pwb" id="pb4"></div>
+              <span class="pwl" id="pwl"></span>
+            </div>
+          </div>
+          <div class="fg">
+            <label class="fl">Confirm New Password</label>
+            <div class="iw">
+              <input class="fi" type="password" id="fp-newpw2" placeholder="Repeat new password" autocomplete="new-password"/>
+              <button type="button" class="eye" onclick="togglePw('fp-newpw2',this)">👁</button>
+            </div>
+          </div>
+          <button class="fbtn" id="btn-fp2" type="submit"><span id="btn-fp2-t">Reset Password →</span></button>
+        </form>
+        <div class="sw"><a onclick="fpResend()">Resend code</a> · <a onclick="setTab('login')">← Back to Sign In</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fnote">🔒 Passwords hashed with bcrypt · JWT sessions · MongoDB storage<br/>SecureCheck AI — Senior Design Project · VIT University</div>
+</div></div>
+
+<script>
+/* ── Config ────────────────────────────────────────── */
+const API = 'http://localhost:5000/api';
+
+/* ── If already logged in, skip to dashboard ────── */
+if (localStorage.getItem('ts_token')) {
+  window.location.replace('dashboard.html');
+}
+
+/* ── Tab ──────────────────────────────────────────── */
+function setTab(t) {
+  ['login','signup','forgot'].forEach(x => {
+    const tb = document.getElementById('t-'+x);
+    const fm = document.getElementById('f-'+x);
+    if(tb) tb.classList.toggle('on', x===t);
+    if(fm) fm.style.display = x===t ? 'block':'none';
+  });
+  clearAlert();
+  // Reset forgot steps
+  if(t==='forgot'){
+    document.getElementById('fp-step1').style.display='block';
+    document.getElementById('fp-step2').style.display='none';
+  }
+}
+
+/* ── Alert ────────────────────────────────────────── */
+function showAlert(msg, type='err') {
+  const el = document.getElementById('alert');
+  document.getElementById('a-icon').textContent = type==='err'?'⚠':type==='ok'?'✓':'ℹ';
+  document.getElementById('a-msg').innerHTML = msg;
+  el.className = `alert ${type} show`;
+  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function clearAlert() {
+  document.getElementById('alert').className = 'alert';
+}
+
+/* ── Password toggle ──────────────────────────────── */
+function togglePw(id, btn) {
+  const i = document.getElementById(id);
+  i.type = i.type==='password' ? 'text' : 'password';
+  btn.textContent = i.type==='text' ? '🙈' : '👁';
+}
+
+/* ── Password strength ────────────────────────────── */
+function pwStr(pw) {
+  const el = document.getElementById('pws');
+  if (!pw) { el.style.display='none'; return; }
+  el.style.display = 'flex';
+  let s=0;
+  if(pw.length>=8)s++; if(/[A-Z]/.test(pw))s++; if(/[0-9]/.test(pw))s++; if(/[^A-Za-z0-9]/.test(pw))s++;
+  const c={1:'w',2:'w',3:'f',4:'s'};
+  ['pb1','pb2','pb3','pb4'].forEach((id,i)=>{
+    const b=document.getElementById(id); b.className='pwb'; if(i<s)b.classList.add(c[s]||'w');
+  });
+  document.getElementById('pwl').textContent=['','Weak','Fair','Strong','Very strong'][s]||'';
+}
+
+/* ── Button state ─────────────────────────────────── */
+function setBusy(btnId, innerSpanId, busy, label) {
+  const btn = document.getElementById(btnId);
+  const sp  = document.getElementById(innerSpanId);
+  btn.disabled = busy;
+  sp.innerHTML = busy ? '<div class="spin"></div> Please wait…' : label;
+}
+
+/* ── Shake invalid input ──────────────────────────── */
+function shake(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('shake');
+  void el.offsetWidth;
+  el.classList.add('shake');
+  el.focus();
+}
+
+/* ── Success redirect ─────────────────────────────── */
+function redirectToDashboard(isNew) {
+  const ov = document.getElementById('sov');
+  document.getElementById('sov-t').textContent = isNew ? 'Account Created!' : 'Login Successful!';
+  document.getElementById('sov-s').textContent = isNew
+    ? 'Setting up your dashboard...'
+    : 'Taking you to your dashboard...';
+  ov.classList.add('show');
+  setTimeout(() => { document.getElementById('sov-fill').style.width = '100%'; }, 50);
+  setTimeout(() => { window.location.replace('dashboard.html'); }, 1100);
+}
+
+/* ══════════════════════════════════════════════════
+   LOGIN
+   ══════════════════════════════════════════════════ */
+async function doLogin(e) {
+  e.preventDefault();
+  clearAlert();
+  const email = document.getElementById('l-email').value.trim();
+  const pw    = document.getElementById('l-pw').value;
+
+  // Client-side validation
+  if (!email) { showAlert('Please enter your email address.'); shake('l-email'); return; }
+  if (!pw)    { showAlert('Please enter your password.'); shake('l-pw'); return; }
+
+  setBusy('btn-l','btn-l-t', true);
+
+  try {
+    const res  = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pw }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Specific server-side messages
+      if (res.status === 404) {
+        // User does not exist
+        showAlert(
+          `${data.error}&nbsp;&nbsp;<a onclick="setTab('signup')">→ Create account</a>`,
+          'err'
+        );
+        shake('l-email');
+      } else if (res.status === 401) {
+        // Wrong password
+        showAlert(data.error, 'err');
+        document.getElementById('l-pw').value = '';
+        shake('l-pw');
+      } else {
+        showAlert(data.error || 'Login failed. Please try again.', 'err');
+      }
+      setBusy('btn-l','btn-l-t', false, 'Sign In →');
+      return;
+    }
+
+    // ✅ Login success
+    localStorage.setItem('ts_token', data.token);
+    localStorage.setItem('ts_user',  JSON.stringify(data.user));
+    redirectToDashboard(false);
+
+  } catch (networkErr) {
+    showAlert(
+      '<strong>Cannot reach server.</strong> Make sure backend is running.<br/>' +
+      '<small>Open a terminal → cd backend → npm run dev</small>',
+      'err'
+    );
+    setBusy('btn-l','btn-l-t', false, 'Sign In →');
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   FORGOT PASSWORD — Step 1: Send OTP
+   ══════════════════════════════════════════════════ */
+let fpEmail = '';
+
+async function doSendOtp(e) {
+  e.preventDefault();
+  clearAlert();
+  fpEmail = document.getElementById('fp-email').value.trim();
+  if (!fpEmail) { showAlert('Please enter your email address.'); shake('fp-email'); return; }
+  setBusy('btn-fp1','btn-fp1-t', true);
+  try {
+    const res  = await fetch(`${API}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: fpEmail }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(data.error || 'Failed to send OTP.'); setBusy('btn-fp1','btn-fp1-t', false, 'Send Reset Code →'); return; }
+
+    // Show step 2
+    document.getElementById('fp-step1').style.display = 'none';
+    document.getElementById('fp-step2').style.display = 'block';
+    document.getElementById('fp-step2-sub').textContent =
+      `Code sent to ${fpEmail}. Check backend terminal (dev mode).`;
+
+    // Dev helper — show OTP in success alert
+    if (data.devOtp) {
+      showAlert(`✓ Dev mode OTP: <strong style="font-size:20px;letter-spacing:4px">${data.devOtp}</strong><br><small>In production this would be emailed.</small>`, 'ok');
+    } else {
+      showAlert('OTP sent! Check your email.', 'ok');
+    }
+    setBusy('btn-fp1','btn-fp1-t', false, 'Send Reset Code →');
+  } catch {
+    showAlert('<strong>Cannot reach server.</strong> Make sure backend is running.', 'err');
+    setBusy('btn-fp1','btn-fp1-t', false, 'Send Reset Code →');
+  }
+}
+
+async function fpResend() {
+  document.getElementById('fp-step2').style.display = 'none';
+  document.getElementById('fp-step1').style.display = 'block';
+  clearAlert();
+}
+
+/* ══════════════════════════════════════════════════
+   FORGOT PASSWORD — Step 2: Reset Password
+   ══════════════════════════════════════════════════ */
+async function doResetPassword(e) {
+  e.preventDefault();
+  clearAlert();
+  const otp  = document.getElementById('fp-otp').value.trim();
+  const pw   = document.getElementById('fp-newpw').value;
+  const pw2  = document.getElementById('fp-newpw2').value;
+
+  if (!otp || otp.length !== 6) { showAlert('Please enter the 6-digit code.'); shake('fp-otp'); return; }
+  if (!pw)                        { showAlert('Please enter a new password.'); shake('fp-newpw'); return; }
+  if (pw.length < 8)              { showAlert('Password must be at least 8 characters.'); shake('fp-newpw'); return; }
+  if (pw !== pw2)                 { showAlert('Passwords do not match.'); shake('fp-newpw2'); return; }
+
+  setBusy('btn-fp2','btn-fp2-t', true);
+  try {
+    const res  = await fetch(`${API}/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: fpEmail, otp, newPassword: pw }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert(data.error || 'Reset failed.'); setBusy('btn-fp2','btn-fp2-t', false, 'Reset Password →'); return; }
+
+    showAlert('✓ Password reset successfully! You can now sign in.', 'ok');
+    setTimeout(() => { setTab('login'); clearAlert(); }, 2000);
+    setBusy('btn-fp2','btn-fp2-t', false, 'Reset Password →');
+  } catch {
+    showAlert('<strong>Cannot reach server.</strong> Make sure backend is running.', 'err');
+    setBusy('btn-fp2','btn-fp2-t', false, 'Reset Password →');
+  }
+}
+
+async function doSignup(e) {
+  e.preventDefault();
+  clearAlert();
+  const name  = document.getElementById('s-name').value.trim();
+  const email = document.getElementById('s-email').value.trim();
+  const pw    = document.getElementById('s-pw').value;
+  const pw2   = document.getElementById('s-pw2').value;
+
+  // Client-side validation
+  if (!name)  { showAlert('Please enter your full name.'); shake('s-name'); return; }
+  if (!email) { showAlert('Please enter your email address.'); shake('s-email'); return; }
+  if (!pw)    { showAlert('Please enter a password.'); shake('s-pw'); return; }
+  if (pw.length < 8) { showAlert('Password must be at least 8 characters.'); shake('s-pw'); return; }
+  if (pw !== pw2)    { showAlert('Passwords do not match. Please re-enter.'); shake('s-pw2'); return; }
+
+  setBusy('btn-s','btn-s-t', true);
+
+  try {
+    const res  = await fetch(`${API}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password: pw }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      if (res.status === 409) {
+        // Email already exists
+        showAlert(
+          `${data.error}&nbsp;&nbsp;<a onclick="setTab('login')">→ Sign in instead</a>`,
+          'err'
+        );
+        shake('s-email');
+      } else {
+        showAlert(data.error || 'Signup failed. Please try again.', 'err');
+      }
+      setBusy('btn-s','btn-s-t', false, 'Create Account →');
+      return;
+    }
+
+    // ✅ Signup success
+    localStorage.setItem('ts_token', data.token);
+    localStorage.setItem('ts_user',  JSON.stringify(data.user));
+    redirectToDashboard(true);
+
+  } catch (networkErr) {
+    showAlert(
+      '<strong>Cannot reach server.</strong> Make sure backend is running.<br/>' +
+      '<small>Open a terminal → cd backend → npm run dev</small>',
+      'err'
+    );
+    setBusy('btn-s','btn-s-t', false, 'Create Account →');
+  }
+}
+</script>
+</body>
+</html>
