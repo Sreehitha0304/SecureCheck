@@ -662,6 +662,10 @@ def analyze_network(url: str) -> dict:
 
 # ─── Flask Routes ──────────────────────────────────────────────────────────────
 
+@app.route("/")
+def home():
+    return "ML Service Running"
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
