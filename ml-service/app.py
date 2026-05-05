@@ -747,6 +747,6 @@ def api_analyze_network():
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get('ML_PORT', 8000))
+    port = int(os.environ.get('PORT', 10000))
     logger.info(f'Starting ThreatShield ML Service on port {port}')
     app.run(host='0.0.0.0', port=port, debug=False)
