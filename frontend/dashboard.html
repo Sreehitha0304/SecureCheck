@@ -612,7 +612,8 @@ tr:hover td{background:var(--bg3)}
 <div id="toasts"></div>
 
 <script>
-const API = 'https://securecheck-orsb.onrender.com/api';
+window.API_BASE = "https://securecheck-orsb.onrender.com/api";
+
 (function(){ if(!localStorage.getItem('ts_token')){ window.location.replace('auth.html'); throw 0; } })();
 
 /* ── UTILS ── */
